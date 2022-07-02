@@ -304,7 +304,7 @@ GROUP BY ticker;
 > My Solution: 
 
 ```
- 
+  
 ```
 
 <br>
