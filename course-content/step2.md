@@ -59,7 +59,9 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+Select *
+From trading.members
+Limit 5
 ```
 
 <br>
@@ -80,7 +82,10 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+Select *
+From trading.members
+Order By first_name ASC
+Limit 5
 ```
 <br>
 
@@ -98,6 +103,11 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
+Select member_id, first_name
+From trading.members
+WHERE region = 'United States'
+Order By first_name ASC
+Limit 5
 
 ```
 
@@ -121,7 +131,11 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+Select member_id, first_name
+From trading.members
+WHERE region != 'Australia'
+Order By first_name ASC
+Limit 5
 ```
 
 <br>
@@ -147,6 +161,10 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
+Select DISTINCT region
+From trading.members
+Order By region DESC
+Limit 5
 
 ```
 
@@ -168,6 +186,10 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
+Select Count(*) AS mentor_count
+From trading.members
+Where  region IN ('United States', 'Australia')
+Limit 5
 
 ```
 
@@ -185,7 +207,10 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+Select Count(*)
+From trading.members
+Where  region NOT IN ('United States', 'Australia')
+Limit 5
 ```
 
 <br>
@@ -203,7 +228,10 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+SELECT region, Count(*) AS mentor_count
+FROM trading.members
+GROUP BY region
+ORDER BY mentor_count DESC;
 ```
 
 <br>
@@ -224,7 +252,14 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+SELECT  
+  CASE 
+    WHEN region != 'United States' THEN 'Non US'
+    ELSE region
+  END AS mentor_region,
+  COUNT(*) AS mentor_count
+FROM trading.members
+GROUP BY mentor_region;
 ```
 
 <br>
@@ -242,8 +277,12 @@ Reveal the code, click on the right hand corner in GitHub to copy it to your cli
 > My Solution: 
 
 ```
-
+SELECT  
+  COUNT(*) AS mentor_count
+FROM trading.members
+WHERE LEFT(first_name, 1) < 'E';
 ```
+
 
 <br>
 
