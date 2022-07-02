@@ -75,7 +75,8 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
-
+SELECT COUNT(*)
+FROM trading.prices;
 ```
 
 <br>
@@ -92,7 +93,10 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
-
+SELECT ticker,
+  COUNT(*) as record_count
+FROM trading.prices
+GROUP BY ticker;
 ```
 
 <br>
@@ -110,6 +114,10 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
+SELECT 
+  MIN(market_date) AS min_date,
+  MAX(market_date) AS max_date
+FROM trading.prices;
 
 ```
 
@@ -127,7 +135,11 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
-
+SELECT ticker,
+  MIN(market_date) AS min_date,
+  MAX(market_date) AS max_date
+FROM trading.prices
+GROUP BY ticker;
 ```
 
 <br>
@@ -145,7 +157,10 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
-
+SELECT AVG(price) AS average
+FROM trading.prices
+WHERE ticker = 'BTC'
+  AND market_date BETWEEN '2020/01/01' AND '2020/12/31';
 ```
 
 <br>
@@ -162,7 +177,13 @@ Let's answer a few simple questions to help us better understand the `trading.pr
 > My Solution: 
 
 ```
-
+SELECT DATE_TRUNC('month', market_date) AS month_start,
+  ROUND(AVG(price)::NUMERIC, 2) AS average_ETH_price
+FROM trading.prices
+WHERE ticker = 'ETH'
+  AND market_date BETWEEN '2020/01/01' AND '2020/12/31'
+GROUP BY month_start
+ORDER BY month_start;
 ```
 
 <br>
