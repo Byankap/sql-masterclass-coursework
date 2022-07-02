@@ -215,7 +215,11 @@ As you inspect the output from the following SQL query - what is your final answ
 > My Solution: 
 
 ```
-
+SELECT ticker,
+  COUNT(market_date) AS total_count,
+  COUNT(DISTINCT(market_date)) AS unique_count
+FROM trading.prices
+GROUP BY ticker;
 ```
 
 <br>
@@ -233,7 +237,10 @@ As you inspect the output from the following SQL query - what is your final answ
 > My Solution: 
 
 ```
-
+SELECT COUNT(*)
+FROM trading.prices
+WHERE ticker = 'BTC'
+  AND high > 30000;
 ```
 
 <br>
@@ -250,6 +257,12 @@ As you inspect the output from the following SQL query - what is your final answ
 > My Solution: 
 
 ```
+SELECT ticker,
+  COUNT(*) AS breakout_days
+FROM trading.prices
+WHERE price > open
+  AND market_date BETWEEN '2020/01/01' AND '2020/12/31'
+GROUP BY ticker;
 
 ```
 
@@ -268,7 +281,12 @@ As you inspect the output from the following SQL query - what is your final answ
 > My Solution: 
 
 ```
-
+SELECT ticker,
+  COUNT(*) AS breakout_days
+FROM trading.prices
+WHERE price < open
+  AND market_date BETWEEN '2020/01/01' AND '2020/12/31'
+GROUP BY ticker;
 ```
 
 <br>
@@ -286,7 +304,7 @@ As you inspect the output from the following SQL query - what is your final answ
 > My Solution: 
 
 ```
-
+ 
 ```
 
 <br>
