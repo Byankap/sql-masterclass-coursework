@@ -50,7 +50,9 @@ Let's finish our initial data exploration with a few more questions for the `tra
 > My Solution: 
 
 ```
-
+Select COUNT(*)
+FROM trading.transactions;
+  
 ```
 
 <br>
@@ -62,7 +64,8 @@ Let's finish our initial data exploration with a few more questions for the `tra
 > My Solution: 
 
 ```
-
+Select DISTINCT(COUNT(*))
+FROM trading.transactions;
 ```
 
 <br>
@@ -79,6 +82,11 @@ Let's finish our initial data exploration with a few more questions for the `tra
 > My Solution: 
 
 ```
+Select txn_type,
+  Count(*) AS transaction_count
+FROM trading.transactions
+WHERE ticker = 'BTC'
+GROUP BY txn_type;
 
 ```
 
@@ -103,7 +111,17 @@ Also round the quantity columns to 2 decimal places.
 > My Solution: 
 
 ```
-
+SELECT
+  txn_type,
+  EXTRACT(year FROM txn_date) AS txn_year,
+  COUNT(*) AS total_trans_count,
+  SUM(quantity) AS total_quantity,
+  AVG(quantity) AS avg_quan_trans
+FROm trading.transactions
+WHERE ticker = 'BTC'
+GROUP BY 1,2
+ORDER BY 2,1;
+  
 ```
 
 <br>
@@ -129,7 +147,15 @@ Also round the quantity columns to 2 decimal places.
 > My Solution: 
 
 ```
-
+SELECT
+  DATE_TRUNC('month', txn_date) AS calendar_month,
+  SUM(CASE WHEN txn_type = 'BUY' THEN quantity ELSE 0 END) AS buy_quantity,
+  SUM(CASE WHEN txn_type = 'SELL' THEN quantity ELSE 0 END) AS sell_quantity
+FROm trading.transactions
+WHERE ticker = 'ETH' 
+  AND txn_date BETWEEN '2020/01/01' AND '2020/12/31'
+GROUP BY calendar_month
+ORDER BY calendar_month;
 ```
 
 <br>
@@ -162,7 +188,14 @@ Also round the quantity columns to 2 decimal places.
 > My Solution: 
 
 ```
-
+SELECT
+  member_id,
+  SUM(CASE WHEN ticker = 'BTC' AND txn_type = 'BUY' THEN quantity ELSE 0 END) AS BTC_buy_quantity,
+  SUM(CASE WHEN ticker = 'BTC' AND txn_type = 'SELL' THEN quantity ELSE 0 END) AS BTC_sell_quantity,
+  SUM(CASE WHEN ticker = 'ETH' AND txn_type = 'BUY' THEN quantity ELSE 0 END) AS ETH_buy_quantity,
+  SUM(CASE WHEN ticker = 'ETH' AND txn_type = 'SELL' THEN quantity ELSE 0 END) AS ETH_sell_quantity
+FROm trading.transactions
+GROUP BY member_id;
 ```
 
 <br>

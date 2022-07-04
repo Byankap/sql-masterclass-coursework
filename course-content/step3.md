@@ -304,7 +304,16 @@ GROUP BY ticker;
 > My Solution: 
 
 ```
-  
+SELECT
+ticker,
+ROUND(SUM(CASE WHEN price > open THEN 1 ELSE 0 END) / COUNT(*)::numeric, 2)  AS non_breakout,
+ROUND(SUM(CASE WHEN price < open THEN 1 ELSE 0 END) / COUNT(*)::numeric, 2)  AS breakout
+FROM
+  trading.prices
+WHERE market_date BETWEEN '2020/01/01'
+  AND '2020/12/31'
+GROUP BY
+  ticker;
 ```
 
 <br>
