@@ -225,6 +225,17 @@ GROUP BY member_id;
 > My Solution: 
 
 ```
+SELECT
+  member_id,
+  SUM(CASE
+    WHEN txn_type = 'BUY' THEN quantity
+    WHEN txn_type = 'SELL' THEN quantity * -1
+    ELSE 0
+  END) AS final_btc_holding
+FROm trading.transactions
+WHERE ticker = 'BTC'
+GROUP BY member_id
+ORDER BY final_btc_holding DESC;
 
 ```
 
@@ -257,6 +268,14 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
+SELECT member_id,
+  SUM(quantity) AS sold_quantity
+FROM trading.transactions
+WHERE ticker = 'BTC'
+  AND txn_type = 'SELL'
+GROUP BY member_id
+HAVING SUM(quantity)< 500
+ORDER BY sold_quantity DESC;
 
 ```
 
@@ -265,6 +284,17 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
+WITH cte_trans AS (
+  SELECT member_id,
+    SUM(quantity) AS sold_quantity
+  FROM trading.transactions
+  WHERE ticker = 'BTC'
+   AND txn_type = 'SELL'
+  GROUP BY member_id
+  ORDER BY sold_quantity DESC)
+SELECT *
+FROM cte_trans
+WHERE sold_quantity < 500;
 
 ```
 
@@ -273,7 +303,16 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
-
+SELECT *
+FROM (
+  SELECT member_id,
+    SUM(quantity) AS sold_quantity
+  FROM trading.transactions
+  WHERE ticker = 'BTC'
+   AND txn_type = 'SELL'
+  GROUP BY member_id
+  ORDER BY sold_quantity DESC) AS subquery
+WHERE sold_quantity < 500
 ```
 
 <br>
@@ -292,6 +331,15 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
+SELECT 
+  member_id,
+  SUM(CASE WHEN txn_type = 'BUY' THEN quantity
+    WHEN txn_type = 'SELL' then quantity * -1
+    ELSE 0 END) AS total_quantity
+FROM trading.transactions
+WHERE ticker = 'BTC'
+GROUP BY member_id
+ORDER BY total_quantity DESC;
 
 ```
 
@@ -322,7 +370,13 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
-
+SELECT 
+  member_id,
+  SUM(CASE WHEN txn_type = 'BUY' THEN quantity ELSE 0 END) / 
+  SUM(CASE WHEN txn_type = 'SELL' THEN quantity ELSE 0 END) AS buy_to_sell_ratio
+FROM trading.transactions
+GROUP BY member_id
+ORDER BY buy_to_sell_ratio DESC;
 ```
 
 <br>
@@ -352,7 +406,24 @@ We can actually do this in 3 different ways!
 > My Solution: 
 
 ```
+WITH eth_ranked AS(
+    SELECT
+        member_id,
+        DATE_TRUNC('month', txn_date)::DATE AS calendar_month,
+        SUM(quantity) AS sold_eth_quantity
+        RANK() OVER (PARTITION BY member_id ORDER BY SUM(quantity) DESC) AS month_rank
+    FROM trading.transactions
+    WHERE ticker = 'ETH' AND txn_type = 'SELL'
+    GROUP BY member_id, calendar_month
+)
 
+SELECT
+    member_id,
+    calendar_month,
+    sold_eth_quantity
+FROM eth_ranked
+WHERE month_rank = 1
+ORDER BY sold_eth_quantity DECS;
 ```
 
 <br>
