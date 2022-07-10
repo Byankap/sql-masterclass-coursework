@@ -53,6 +53,31 @@ First let's create a portfolio quantity base table which summarizes our data wit
 > My Solution: 
 
 ```
+DROP TABLE IF EXISTS temp_portfolio_base;
+CREATE TEMP TABLE temp_portfolio_base AS
+WITH cte_joined_data AS (
+  SELECT
+    members.first_name,
+    members.region,
+    transactions.txn_date,
+    transactions.ticker,
+    CASE
+      WHEN transactions.txn_type = 'SELL' THEN -transactions.quantity
+      ELSE transactions.quantity
+    END AS adjusted_quantity
+  FROM trading.transactions
+  INNER JOIN trading.members
+    ON transactions.member_id = members.member_id
+  WHERE transactions.txn_date <= '2020-12-31'
+)
+SELECT
+  first_name,
+  region,
+  (DATE_TRUNC('YEAR', txn_date) + INTERVAL '12 MONTHS' - INTERVAL '1 DAY')::DATE AS year_end,
+  ticker,
+  SUM(adjusted_quantity) AS yearly_quantity
+FROM cte_joined_data
+GROUP BY first_name, region, year_end, ticker;
 
 ```
 
@@ -67,7 +92,13 @@ Let's take a look at our base table now to see what data we have to play with - 
 > My Solution: 
 
 ```
-
+SELECT 
+  year_end,
+  ticker,
+  yearly_quantity
+FROM temp_portfolio_base
+WHERE first_name = 'Abe'
+ORDER BY ticker ASC;
 ```
 
 <br>
@@ -99,6 +130,15 @@ Although we will only touch on this briefly in this course - the complete Data W
 > My Solution: 
 
 ```
+SELECT 
+  year_end,
+  ticker,
+  yearly_quantity,
+  sum(yearly_quantity) OVER (PARTITION BY first_name, ticker
+      ORDER BY year_end) AS cum_quantity
+FROM temp_portfolio_base
+WHERE first_name = 'Abe'
+ORDER BY ticker ASC;
 
 ```
 
@@ -128,7 +168,20 @@ We can actually `ALTER` and `UPDATE` our temp table to add in an extra column wi
 > My Solution: 
 
 ```
+-- add a column called cumulative_quantity
+ALTER TABLE temp_portfolio_base
+ADD cumulative_quantity NUMERIC;
 
+-- update new column with data
+UPDATE temp_portfolio_base
+SET (cumulative_quantity) = (
+  SELECT
+      SUM(yearly_quantity) OVER (
+    PARTITION BY first_name, ticker
+    ORDER BY year_end
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  )
+);
 ```
 
 <br>
@@ -138,7 +191,8 @@ Now let's check that our updates to the temp table worked by inspecting Abe's re
 > My Solution: 
 
 ```
-
+SELECT* 
+FROM temp_portfolio_base
 ```
 
 <br>
@@ -168,6 +222,20 @@ We will need to create an additional temp table with our cumulative sum instead!
 > My Solution: 
 
 ```
+DROP TABLE IF EXISTS temp_cumulative_portfolio_base;
+CREATE TEMP TABLE temp_cumulative_portfolio_base AS
+SELECT
+  first_name,
+  region,
+  year_end,
+  ticker,
+  yearly_quantity,
+  SUM(yearly_quantity) OVER (
+    PARTITION BY first_name, ticker
+    ORDER BY year_end
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) AS cumulative_quantity
+FROM temp_portfolio_base;
 
 ```
 
