@@ -19,7 +19,46 @@ Before running any of the solution queries below for this tutorial's questions -
 > My Solution: 
 
 ```
+DROP TABLE IF EXISTS temp_portfolio_base;
+CREATE TEMP TABLE temp_portfolio_base AS
+WITH cte_joined_data AS (
+  SELECT
+    members.first_name,
+    members.region,
+    transactions.txn_date,
+    transactions.ticker,
+    CASE
+      WHEN transactions.txn_type = 'SELL' THEN -transactions.quantity
+      ELSE transactions.quantity
+    END AS adjusted_quantity
+  FROM trading.transactions
+  INNER JOIN trading.members
+    ON transactions.member_id = members.member_id
+  WHERE transactions.txn_date <= '2020-12-31'
+)
+SELECT
+  first_name,
+  region,
+  (DATE_TRUNC('YEAR', txn_date) + INTERVAL '12 MONTHS' - INTERVAL '1 DAY')::DATE AS year_end,
+  ticker,
+  SUM(adjusted_quantity) AS yearly_quantity
+FROM cte_joined_data
+GROUP BY first_name, region, year_end, ticker;
 
+DROP TABLE IF EXISTS temp_cumulative_portfolio_base;
+CREATE TEMP TABLE temp_cumulative_portfolio_base AS
+SELECT
+  first_name,
+  region,
+  year_end,
+  ticker,
+  yearly_quantity,
+  SUM(yearly_quantity) OVER (
+    PARTITION BY first_name, ticker
+    ORDER BY year_end
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) AS cumulative_quantity
+FROM temp_portfolio_base;
 ```
 
 <br>
@@ -39,7 +78,16 @@ Let's also order our results by highest portfolio value to lowest rounded to 2 d
 > My Solution: 
 
 ```
-
+SELECT
+  base.first_name,
+  ROUND(SUM(base.cumulative_quantity * prices.price)) AS portfolio_value
+FROM temp_cumulative_portfolio_base AS base
+INNER JOIN trading.prices
+  ON prices.ticker = base.ticker
+  AND base.year_end = prices.market_date
+WHERE base.year_end = '2020-12-31'
+GROUP BY base.first_name
+ORDER BY portfolio_value DESC;
 ```
 
 <br>
@@ -71,7 +119,16 @@ Let's also perform the same ordering and rounding for this query too.
 > My Solution: 
 
 ```
-
+SELECT
+  base.region,
+  ROUND(SUM(base.cumulative_quantity * prices.price)) AS portfolio_value
+FROM temp_cumulative_portfolio_base AS base
+INNER JOIN trading.prices
+  ON prices.ticker = base.ticker
+  AND base.year_end = prices.market_date
+WHERE base.year_end = '2019-12-31'
+GROUP BY base.region
+ORDER BY portfolio_value DESC;
 ```
 
 <br>
@@ -94,7 +151,6 @@ Let's make our percentages between 0 and 100, rounded to decimal places - order 
 > My Solution: 
 
 ```
-
 ```
 
 <br>
