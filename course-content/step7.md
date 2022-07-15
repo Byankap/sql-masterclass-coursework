@@ -151,6 +151,32 @@ Let's make our percentages between 0 and 100, rounded to decimal places - order 
 > My Solution: 
 
 ```
+WITH cte_mentor_table AS (
+  SELECT
+    base.first_name,
+    base.region,
+    SUM(base.cumulative_quantity * prices.price) AS portfolio_value
+  FROM temp_cumulative_portfolio_base AS base
+  INNER JOIN trading.prices ON 
+    prices.ticker = base.ticker AND
+    prices.market_date = base.year_end
+  WHERE base.year_end = '2018-12-31'
+  GROUP BY base.first_name, base.region
+),
+cte_region_table AS (
+  SELECT 
+    first_name,
+    region,
+    portfolio_value,
+    SUM(portfolio_value) OVER (PARTITION BY region) AS region_value
+  FROM cte_mentor_table
+) 
+SELECT
+  region,
+  first_name,
+  ROUND(CAST(100 * portfolio_value / region_value AS NUMERIC), 2) AS contribution_percentage
+FROM cte_region_table
+ORDER BY region_value DESC, contribution_percentage DESC
 ```
 
 <br>
@@ -182,6 +208,35 @@ We can use a similar approach to question 3 - but we will need to avoid the firs
 > My Solution: 
 
 ```
+WITH cte_mentor_table AS (
+  SELECT
+    base.first_name,
+    base.region,
+    prices.ticker,
+    SUM(base.cumulative_quantity * prices.price) AS portfolio_value
+  FROM temp_cumulative_portfolio_base AS base
+  INNER JOIN trading.prices ON 
+    prices.ticker = base.ticker AND
+    prices.market_date = base.year_end
+  WHERE base.year_end = '2017-12-31'
+  GROUP BY base.first_name, base.region,prices.ticker
+),
+cte_region_table AS (
+  SELECT 
+    first_name,
+    region,
+    portfolio_value,
+    ticker,
+    SUM(portfolio_value) OVER (PARTITION BY region, ticker) AS region_value
+  FROM cte_mentor_table
+) 
+SELECT
+  region,
+  first_name,
+  ticker,
+  ROUND(CAST(100 * portfolio_value / region_value AS NUMERIC), 2) AS contribution_percentage
+FROM cte_region_table
+ORDER BY ticker, region, contribution_percentage DESC
 
 ```
 
@@ -245,6 +300,18 @@ Our first step is to try and create a long table first with all of our ranks for
 > My Solution: 
 
 ```
+SELECT
+  year_end,
+  region,
+  first_name,
+  ticker,
+  RANK() OVER (
+    PARTITION BY region, year_end
+    ORDER BY cumulative_quantity DESC
+  ) AS ranking
+FROM temp_cumulative_portfolio_base
+WHERE region IN ('United States', 'Australia')
+ORDER BY year_end, region, ranking;
 
 ```
 
@@ -255,6 +322,33 @@ Let's now pivote this long table to a slightly easier to read wide table
 > My Solution: 
 
 ```
+WITH cte_ranks AS (
+SELECT
+  year_end,
+  region,
+  first_name,
+  ticker,
+  RANK() OVER (
+    PARTITION BY region, year_end, ticker
+    ORDER BY cumulative_quantity DESC
+  ) AS ranking
+FROM temp_cumulative_portfolio_base
+WHERE region IN ('United States', 'Australia')
+)
+SELECT
+  region,
+  first_name,
+  MAX(CASE WHEN ticker = 'BTC' AND year_end = '2017-12-31' THEN ranking ELSE NULL END) AS "BTC 2017",
+  MAX(CASE WHEN ticker = 'BTC' AND year_end = '2018-12-31' THEN ranking ELSE NULL END) AS "BTC 2018",
+  MAX(CASE WHEN ticker = 'BTC' AND year_end = '2019-12-31' THEN ranking ELSE NULL END) AS "BTC 2019",
+  MAX(CASE WHEN ticker = 'BTC' AND year_end = '2020-12-31' THEN ranking ELSE NULL END) AS "BTC 2020",
+  MAX(CASE WHEN ticker = 'ETH' AND year_end = '2017-12-31' THEN ranking ELSE NULL END) AS "ETH 2017",
+  MAX(CASE WHEN ticker = 'ETH' AND year_end = '2018-12-31' THEN ranking ELSE NULL END) AS "ETH 2018",
+  MAX(CASE WHEN ticker = 'ETH' AND year_end = '2019-12-31' THEN ranking ELSE NULL END) AS "ETH 2019",
+  MAX(CASE WHEN ticker = 'ETH' AND year_end = '2020-12-31' THEN ranking ELSE NULL END) AS "ETH 2020"
+FROM cte_ranks
+GROUP BY region, first_name
+ORDER BY region, "BTC 2017";WIT
 
 ```
 
