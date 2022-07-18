@@ -72,6 +72,13 @@ We can calculate the first 2 questions using a single query
 > My Solution: 
 
 ```
+SELECT
+  SUM(transactions.quantity * prices.price) AS initial_value,
+  SUM(transactions.quantity * prices.price * transactions.percentage_fee / 100) AS fees
+FROM leah_hodl_strategy AS transactions
+INNER JOIN trading.prices
+  ON transactions.ticker = prices.ticker
+  AND transactions.txn_date = prices.market_date;
 
 ```
 
