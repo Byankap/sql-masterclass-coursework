@@ -72,6 +72,7 @@ We can calculate the first 2 questions using a single query
 > My Solution: 
 
 ```
+leah_hodl_strategy
 SELECT
   SUM(transactions.quantity * prices.price) AS initial_value,
   SUM(transactions.quantity * prices.price * transactions.percentage_fee / 100) AS fees
@@ -96,7 +97,12 @@ INNER JOIN trading.prices
 > My Solution: 
 
 ```
-
+SELECT
+  SUM(transactions.quantity * prices.price) AS final_value
+FROM leah_hodl_strategy AS transactions
+INNER JOIN trading.prices
+  ON transactions.ticker = prices.ticker
+WHERE prices.market_date = '2021-08-29'
 ```
 
 <br>
@@ -114,7 +120,27 @@ We can actually do one better and combine all 4 metrics into a single query!
 > My Solution: 
 
 ```
-
+WITH cte_portfolio_values AS (
+  SELECT
+    -- initial metrics
+    SUM(transactions.quantity * initial.price) AS initial_value,
+    SUM(transactions.quantity * initial.price * transactions.percentage_fee / 100) AS fees,
+    -- final value
+    SUM(transactions.quantity * final.price) AS final_value
+  FROM leah_hodl_strategy AS transactions
+  INNER JOIN trading.prices AS initial
+    ON transactions.ticker = initial.ticker
+    AND transactions.txn_date = initial.market_date
+  INNER JOIN trading.prices AS final
+    ON transactions.ticker = final.ticker
+  WHERE final.market_date = '2021-08-29'
+)
+SELECT
+  initial_value,
+  fees,
+  final_value,
+  final_value / initial_value AS profitability
+FROM cte_portfolio_values;
 ```
 <br>
 
